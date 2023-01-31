@@ -1,0 +1,23 @@
+NestJs
+https://www.sidechannel.blog/en/creating-an-api-with-nestjs/
+
+TypeOrm mongoDb
+https://github.com/typeorm/typeorm/blob/master/docs/mongodb.md
+
+
+nest new nest-shopping-list
+cd nest-shopping-list
+nest generate resource item
+yarn add @nestjs/typeorm typeorm
+yarn add @nestjs/config
+yarn add @nestjs/swagger
+yarn add @types/helmet  helmet
+yarn add @types/winston winston
+yarn add class-validator
+yarn add class-transformer
+yarn add @nestjs/microservices
+yarn add @faker-js/faker -D
+yarn add uuid
+yarn add mongodb
+
+$ yarn add class-transformer-validator
