@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CompraService } from './compra.service';
+import { AcaoService } from '../acao/acao.service';
 import { Compra } from './entities/compra.entity';
 import { faker } from '@faker-js/faker';
 import * as uuid from 'uuid';
@@ -15,6 +16,8 @@ const compraMock = {
   valor: Number(faker.commerce.price()),
 };
 
+const valorAcao = 6.89;
+
 const listCompraMock = [{ ...compraMock }];
 
 describe('CompraService', () => {
@@ -23,11 +26,13 @@ describe('CompraService', () => {
 
   const mockCompraRepository = () => ({
     find: jest.fn(() => Promise.resolve(listCompraMock)),
+    findone: jest.fn(() => Promise.resolve(compraMock)),
   });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        AcaoService,
         CompraService,
         {
           provide: getRepositoryToken(Compra),
@@ -52,15 +57,24 @@ describe('CompraService', () => {
 
       expect(compraRepository.find).toBeCalled();
       expect(ret.length).toEqual(listCompraMock.length);
-
-      expect(ret[0].valueSum).toBeDefined();
-      expect(ret[0].valueSum).toBeGreaterThan(0);
-
-      expect(ret[0].saleSum).toBeDefined();
-      expect(ret[0].valueAdd).toBeDefined();
-      expect(ret[0].percentAdd).toBeDefined();
     });
 
+    it('Should return compra register not sales', async () => {
+      const ret = await service.findOne(compraMock._id);
+
+      expect(compraRepository.findOne).toBeCalled();
+
+      const totalCompra = compraMock.valor * compraMock.qtd;
+      expect(ret.valueSum).toEqual(totalCompra);
+
+      const totalVenda = valorAcao * compraMock.qtd;
+      expect(ret.saleSum).toEqual(totalVenda);
+
+      const diferenca = totalVenda - totalCompra;
+      const percentual = (diferenca * 100) / totalCompra;
+      expect(ret.valueAdd).toEqual(diferenca);
+      expect(ret.percentAdd).toEqual(percentual);
+    });
     //Find com valor de venda (calcular os campos)
     //Find com valor do dia (calcular os campos)
   });

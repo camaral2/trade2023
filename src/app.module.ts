@@ -22,8 +22,4 @@ import 'dotenv/config';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {
-  constructor() {
-    console.log('uri:', process.env.MONGO_URL);
-  }
-}
+export class AppModule {}

@@ -1,21 +1,29 @@
-import { Injectable } from '@nestjs/common';
+//https://github.com/rizama/marketplace-api-search/blob/main/src/jaknot/jaknot.service.ts
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import logger from '../utils/logger';
 import { Repository } from 'typeorm';
 import { CreateCompraDto } from './dto/create-compra.dto';
 import { UpdateCompraDto } from './dto/update-compra.dto';
 import { Compra } from './entities/compra.entity';
+import { AcaoService } from '../acao/acao.service';
+import { AcaoDto } from '../acao/dto/acao.dto';
 
 @Injectable()
 export class CompraService {
   constructor(
     @InjectRepository(Compra)
-    private readonly usersRepository: Repository<Compra>,
+    private readonly compraRepository: Repository<Compra>,
+    private readonly acaoService: AcaoService,
   ) {}
 
   async findAll(userFilter: string): Promise<Compra[]> {
     try {
-      const arr = await this.usersRepository.find({
+      const arr = await this.compraRepository.find({
         where: { user: userFilter },
       });
 
@@ -30,10 +38,30 @@ export class CompraService {
     }
   }
 
-  private prepareRegister(dataOld: Compra): Compra {
+  async findOne(id: string): Promise<Compra> {
+    try {
+      if (!id || id == undefined) throw new BadRequestException('id is empty');
+
+      const compra = await this.compraRepository.findOne({
+        where: { _id: id },
+      });
+      if (!compra) throw new NotFoundException(`Id not found: (${id})`);
+
+      return this.prepareRegister(compra);
+    } catch (err) {
+      logger.error(`Error: ${err} - [findOne: ${id}]`);
+      throw err;
+    }
+  }
+
+  private async prepareRegister(dataOld: Compra): Promise<Compra> {
     if (!(dataOld.valueNow > 0) && !(dataOld.valueSale > 0)) {
-      dataOld.valueNow = 4.89;
-      dataOld.dateValue = new Date();
+      const ret: AcaoDto = await this.acaoService.getAcaoToday(dataOld.acao);
+
+      if (ret) {
+        dataOld.valueNow = ret.value;
+        dataOld.dateValue = new Date();
+      }
     }
 
     if (dataOld.valueNow > 0) {
@@ -51,10 +79,6 @@ export class CompraService {
     dataEntity.percentAdd = (dataEntity.saleSum * 100) / dataEntity.valueSum;
 
     return dataEntity;
-  }
-
-  findOne(id: string) {
-    return `This action returns a #${id} compra`;
   }
 
   create(createCompraDto: CreateCompraDto) {
