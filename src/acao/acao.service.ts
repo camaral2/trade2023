@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { AcaoDto } from './dto/acao.dto';
 import { RequestUtils } from '../utils';
 import cheerio from 'cheerio';
@@ -14,6 +14,7 @@ export class AcaoService {
 
   async getAcaoToday(nomeAcao: string): Promise<AcaoDto> {
     console.log('getAcaoToday:', nomeAcao);
+    console.log('Fazendo pesquisa no site');
 
     const url =
       'https://www.infomoney.com.br/cotacoes/b3/acao/magazine-luiza-mglu3/';

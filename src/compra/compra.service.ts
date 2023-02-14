@@ -12,6 +12,7 @@ import { UpdateCompraDto } from './dto/update-compra.dto';
 import { Compra } from './entities/compra.entity';
 import { AcaoService } from '../acao/acao.service';
 import { AcaoDto } from '../acao/dto/acao.dto';
+import { util } from '../utils';
 
 @Injectable()
 export class CompraService {
@@ -65,18 +66,28 @@ export class CompraService {
     }
 
     if (dataOld.valueNow > 0) {
-      dataOld = this.setValues(dataOld.valueNow, dataOld);
+      dataOld = await this.setValues(dataOld.valueNow, dataOld);
     } else {
-      dataOld = this.setValues(dataOld.valueSale, dataOld);
+      dataOld = await this.setValues(dataOld.valueSale, dataOld);
     }
     return dataOld;
   }
 
-  private setValues(value: number, dataEntity: Compra): Compra {
-    dataEntity.saleSum = value * dataEntity.qtd;
-    dataEntity.valueSum = dataEntity.valor * dataEntity.qtd;
-    dataEntity.valueAdd = dataEntity.saleSum - dataEntity.valueSum;
-    dataEntity.percentAdd = (dataEntity.saleSum * 100) / dataEntity.valueSum;
+  private async setValues(value: number, dataEntity: Compra): Promise<Compra> {
+    dataEntity.saleSum = util.numero(value * dataEntity.qtd, 2);
+    dataEntity.valueSum = util.numero(dataEntity.valor * dataEntity.qtd, 2);
+    dataEntity.valueAdd = util.numero(
+      dataEntity.saleSum - dataEntity.valueSum,
+      2,
+    );
+
+    //console.log('dataEntity.valueSum:', dataEntity.valueSum);
+    //console.log('dataEntity.saleSum:', dataEntity.saleSum);
+
+    const percentAdd = util.percent(dataEntity.valueSum, dataEntity.saleSum, 2);
+    dataEntity.percentAdd = percentAdd;
+
+    //console.log('dataEntity.percentAdd:', dataEntity.percentAdd);
 
     return dataEntity;
   }
