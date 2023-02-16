@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-export abstract class RequestUtils {
-  static async getRequest(url: string, headers?: any) {
+export class RequestUtils {
+  public async getRequest(url: string, headers?: any): Promise<any> {
     try {
       const options = {};
 

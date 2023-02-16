@@ -1,3 +1,5 @@
+import { Injectable } from '@nestjs/common';
+
 export abstract class util {
   static percent(valueA: number, valueB: number, decimal: number) {
     const calcB = this.numero(valueB * 100, decimal);

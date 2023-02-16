@@ -2,6 +2,7 @@ import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { AcaoDto } from './dto/acao.dto';
 import { RequestUtils } from '../utils';
 import cheerio from 'cheerio';
+import logger from '../utils/logger';
 
 // jest.mock('axios', () => ({
 //   post: () => Promise.resolve({ data: 'data' }),
@@ -12,10 +13,9 @@ export class AcaoService {
   private readonly USER_AGENT =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36';
 
-  async getAcaoToday(nomeAcao: string): Promise<AcaoDto> {
-    console.log('getAcaoToday:', nomeAcao);
-    console.log('Fazendo pesquisa no site');
+  constructor(private requestUtils: RequestUtils) {}
 
+  async getAcaoToday(nomeAcao: string): Promise<AcaoDto> {
     const url =
       'https://www.infomoney.com.br/cotacoes/b3/acao/magazine-luiza-mglu3/';
     const headers = {
@@ -23,11 +23,14 @@ export class AcaoService {
       'User-Agent': this.USER_AGENT,
     };
 
-    const requestData = await RequestUtils.getRequest(url, headers);
+    const requestData = await this.requestUtils.getRequest(url, headers);
 
-    if (!requestData || !requestData.items) {
+    if (!requestData) {
+      logger.error(`Retornar null - requestData is null - url: [${url}]`);
       return null;
     }
+
+    logger.info(`Retornou dados na consulta na url: [${url}]`);
 
     const $ = await cheerio.load(requestData);
 
@@ -39,10 +42,6 @@ export class AcaoService {
 
     const parseMaximo = $('.maximo').children().first().text();
     const valorMaximo = Number(parseMaximo.replace('.', '').replace(',', '.'));
-
-    console.log('valorMinimo:', valorMinimo);
-    console.log('valorAtual:', valorAtual);
-    console.log('valorMaximo:', valorMaximo);
 
     /*
 

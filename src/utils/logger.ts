@@ -35,7 +35,7 @@ const logger = winston.createLogger({
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
     prettyJson,
   ),
-  defaultMeta: { service: 'prog-nest-api' },
+  defaultMeta: { service: 'trade2023' },
   transports: [new winston.transports.Console({})],
 });
 
