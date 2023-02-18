@@ -1,4 +1,5 @@
 import { Entity, Column, BaseEntity, ObjectIdColumn } from 'typeorm';
+import { AcaoDto } from '../dto/acao.dto';
 
 @Entity('configAcao')
 export class configAcao extends BaseEntity {
@@ -15,6 +16,7 @@ export class configAcao extends BaseEntity {
   desc: string;
 
   data: Date;
+  dadosAcao: AcaoDto;
 
   constructor(obj?: Partial<configAcao>) {
     super();

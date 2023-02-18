@@ -33,6 +33,7 @@ const acaoMock: AcaoDto = {
   value: 6.9,
   valueMin: 5.11,
   valueMax: 7.23,
+  dataAcao: new Date(),
 };
 
 const listCompraMock = [{ ...compraMockNotSales, compraMockSales }];

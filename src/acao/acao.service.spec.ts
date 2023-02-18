@@ -6,10 +6,12 @@ import { configAcao } from './entities/configAcao.entity';
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { Repository } from 'typeorm';
 
 describe('AcaoService', () => {
   let service: AcaoService;
   let request: RequestUtils;
+  let configAcaoRepository: Repository<configAcao>;
 
   const dadoHtmlFirst = fs.readFileSync(
     path.join(__dirname, './mockpage_1.html'),
@@ -21,21 +23,13 @@ describe('AcaoService', () => {
     'utf-8',
   );
 
-  // const mockRequest = () => ({
-  //   getRequest: jest.fn(() => Promise.resolve(dadoHtml)),
-  // });
-
-  const mockConfigAcao = {
+  const mockConfigAcaoNotData = {
     _id: '625e14bdfc2cbba1de91d11a',
     acao: 'MGLU3',
     url: 'https://www.infomoney.com.br/cotacoes/b3/acao/magazine-luiza-mglu3/',
     sessao: '5bji9md82ahe',
     desc: 'Magazine Luiza (MGLU3)',
   };
-
-  const mockConfigAcaoRepository = () => ({
-    findOne: jest.fn(() => Promise.resolve(mockConfigAcao)),
-  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -44,20 +38,32 @@ describe('AcaoService', () => {
         AcaoService,
         {
           provide: getRepositoryToken(configAcao),
-          useFactory: mockConfigAcaoRepository,
+          useValue: {
+            update: jest.fn(),
+            findOne: jest.fn(),
+          },
         },
       ],
     }).compile();
 
     service = module.get<AcaoService>(AcaoService);
     request = module.get<RequestUtils>(RequestUtils);
+    configAcaoRepository = module.get<Repository<configAcao>>(
+      getRepositoryToken(configAcao),
+    );
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  it('Should return value of ação today', async () => {
+  it.only('Should return value of ação today', async () => {
+    const spyFindConfigAcao = jest
+      .spyOn(configAcaoRepository, 'findOne')
+      .mockImplementationOnce(() =>
+        Promise.resolve(mockConfigAcaoNotData as configAcao),
+      );
+
     const spyRequestFirst = jest
       .spyOn(request, 'getRequest')
       .mockResolvedValue(dadoHtmlFirst);
@@ -66,6 +72,7 @@ describe('AcaoService', () => {
     const ret = await service.getAcaoToday(acao);
 
     expect(request.getRequest).toBeCalled();
+    expect(spyFindConfigAcao).toBeCalled();
     expect(spyRequestFirst).toBeCalled();
 
     expect(ret.acao).toEqual(acao);

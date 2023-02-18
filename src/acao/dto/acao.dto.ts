@@ -29,4 +29,6 @@ export class AcaoDto {
   @ApiProperty()
   @IsDecimal()
   readonly valueMax: number;
+
+  readonly dataAcao: Date;
 }
