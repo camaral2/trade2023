@@ -7,19 +7,16 @@ import { configAcao } from './entities/configAcao.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Repository } from 'typeorm';
+import { not } from 'cheerio/lib/api/traversing';
+import { UnauthorizedException } from '@nestjs/common';
 
 describe('AcaoService', () => {
   let service: AcaoService;
   let request: RequestUtils;
   let configAcaoRepository: Repository<configAcao>;
 
-  const dadoHtmlFirst = fs.readFileSync(
-    path.join(__dirname, './mockpage_1.html'),
-    'utf-8',
-  );
-
-  const dadoHtmlSecound = fs.readFileSync(
-    path.join(__dirname, './mockpage_2.html'),
+  const dadoHtml = fs.readFileSync(
+    path.join(__dirname, './mockpage.html'),
     'utf-8',
   );
 
@@ -29,6 +26,23 @@ describe('AcaoService', () => {
     url: 'https://www.infomoney.com.br/cotacoes/b3/acao/magazine-luiza-mglu3/',
     sessao: '5bji9md82ahe',
     desc: 'Magazine Luiza (MGLU3)',
+  };
+
+  const mockDadosAcao = {
+    acao: 'MGLU3',
+    valueMin: 1.12,
+    value: 2.22,
+    valueMax: 3.32,
+    dataAcao: new Date(),
+  };
+
+  const mockConfigAcaoWithData = {
+    _id: '625e14bdfc2cbba1de91d11a',
+    acao: 'MGLU3',
+    url: 'https://www.infomoney.com.br/cotacoes/b3/acao/magazine-luiza-mglu3/',
+    sessao: '5bji9md82ahe',
+    desc: 'Magazine Luiza (MGLU3)',
+    dadosAcao: mockDadosAcao,
   };
 
   beforeEach(async () => {
@@ -57,7 +71,7 @@ describe('AcaoService', () => {
     expect(service).toBeDefined();
   });
 
-  it.only('Should return value of ação today', async () => {
+  it('Should return value of ação today', async () => {
     const spyFindConfigAcao = jest
       .spyOn(configAcaoRepository, 'findOne')
       .mockImplementationOnce(() =>
@@ -66,7 +80,7 @@ describe('AcaoService', () => {
 
     const spyRequestFirst = jest
       .spyOn(request, 'getRequest')
-      .mockResolvedValue(dadoHtmlFirst);
+      .mockResolvedValue(dadoHtml);
 
     const acao = 'MGLU3';
     const ret = await service.getAcaoToday(acao);
@@ -82,33 +96,39 @@ describe('AcaoService', () => {
   });
 
   it('Should return value of ação today in secound get', async () => {
+    const spyFindConfigAcao = jest
+      .spyOn(configAcaoRepository, 'findOne')
+      .mockImplementationOnce(() =>
+        Promise.resolve(mockConfigAcaoWithData as configAcao),
+      );
+
     const spyRequestSecound = jest
       .spyOn(request, 'getRequest')
-      .mockResolvedValue(dadoHtmlSecound);
+      .mockResolvedValue(dadoHtml);
 
     const acao = 'MGLU3';
     const ret = await service.getAcaoToday(acao);
 
-    expect(request.getRequest).toBeCalled();
-    expect(spyRequestSecound).toBeCalled();
+    expect(spyFindConfigAcao).toBeCalled();
+    expect(request.getRequest).not.toBeCalled();
+    expect(spyRequestSecound).not.toBeCalled();
 
-    expect(ret.acao).toEqual(acao);
-    expect(ret.value).toEqual(4.06);
-    expect(ret.valueMin).toEqual(4.01);
-    expect(ret.valueMax).toEqual(4.22);
+    expect(ret).toMatchObject(mockDadosAcao);
   });
 
   it('Should not return value of ação today', async () => {
-    const spyRequestNull = jest
-      .spyOn(request, 'getRequest')
-      .mockResolvedValue(null);
+    const spyFindConfigAcao = jest
+      .spyOn(configAcaoRepository, 'findOne')
+      .mockImplementationOnce(() => Promise.resolve(null));
 
     const acao = 'NONONO';
-    const ret = await service.getAcaoToday(acao);
 
-    expect(request.getRequest).toBeCalled();
-    expect(spyRequestNull).toBeCalled();
+    await expect(service.getAcaoToday(acao)).rejects.toThrow(
+      new UnauthorizedException({
+        message: 'nomeAcao not found: (NONONO)',
+      }),
+    );
 
-    expect(ret).toEqual(null);
+    expect(spyFindConfigAcao).toBeCalled();
   });
 });
