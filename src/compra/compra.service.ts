@@ -13,6 +13,7 @@ import { Compra } from './entities/compra.entity';
 import { AcaoService } from '../acao/acao.service';
 import { AcaoDto } from '../acao/dto/acao.dto';
 import { util } from '../utils';
+import * as uuid from 'uuid';
 
 @Injectable()
 export class CompraService {
@@ -28,10 +29,12 @@ export class CompraService {
         where: { user: userFilter },
       });
 
-      arr.forEach((row) => {
-        this.prepareRegister(row);
-      });
+      logger.info(`Acoes register:(${arr.length}) - filter:(${userFilter})`);
 
+      for (let index = 0; index < arr.length; index++) {
+        const element = arr[index];
+        await this.prepareRegister(element);
+      }
       return arr;
     } catch (err) {
       logger.error(`Error: ${err} - [${userFilter}]`);
@@ -48,7 +51,7 @@ export class CompraService {
       });
       if (!compra) throw new NotFoundException(`Id not found: (${id})`);
 
-      return this.prepareRegister(compra);
+      return await this.prepareRegister(compra);
     } catch (err) {
       logger.error(`Error: ${err} - [findOne: ${id}]`);
       throw err;
@@ -56,12 +59,20 @@ export class CompraService {
   }
 
   private async prepareRegister(dataOld: Compra): Promise<Compra> {
+    logger.info(
+      `prepareRegister - dataOld.valueNow:(${dataOld.valueNow}) - dataOld.valueSale:(${dataOld.valueSale})`,
+    );
+
     if (!(dataOld.valueNow > 0) && !(dataOld.valueSale > 0)) {
       const ret: AcaoDto = await this.acaoService.getAcaoToday(dataOld.acao);
 
+      // logger.info(`ret.value:${ret.value}`);
+      // logger.info(`ret.valueMin:${ret.valueMin}`);
+      // logger.info(`ret.valueMax:${ret.valueMax}`);
+
       if (ret) {
         dataOld.valueNow = ret.value;
-        dataOld.dateValue = new Date();
+        dataOld.dateValue = ret.dataAcao;
       }
     }
 
@@ -70,6 +81,11 @@ export class CompraService {
     } else {
       dataOld = await this.setValues(dataOld.valueSale, dataOld);
     }
+
+    logger.info(`Valor retorno - dataOld.valueNow:${dataOld.valueNow}`);
+    logger.info(`Valor retorno - dataOld.valueSale:${dataOld.valueSale}`);
+    logger.info(`Valor retorno - dataOld.valor:${dataOld.valor}`);
+
     return dataOld;
   }
 
@@ -92,15 +108,27 @@ export class CompraService {
     return dataEntity;
   }
 
-  create(createCompraDto: CreateCompraDto) {
-    return 'This action adds a new compra';
+  async create(createCompraDto: CreateCompraDto): Promise<Compra> {
+    const { acao, user, valor, qtd, data } = createCompraDto;
+
+    const compra = new Compra(createCompraDto);
+
+    compra._id = uuid.v4();
+    compra.acao = acao;
+    compra.user = user;
+    compra.valor = valor;
+    compra.qtd = qtd;
+    compra.data = data;
+
+    await compra.save();
+    return compra;
   }
 
   update(id: number, updateCompraDto: UpdateCompraDto) {
     return `This action updates a #${id} compra`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} compra`;
+  async remove(id: string) {
+    await this.compraRepository.delete(id);
   }
 }

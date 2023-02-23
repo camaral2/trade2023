@@ -4,11 +4,21 @@ import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { faker } from '@faker-js/faker';
+import * as uuid from 'uuid';
+
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let api;
 
-  const userId = '63b34f5da25fbb24d295ab24';
+  const userId = uuid.v4();
+  let idCompra: any;
+  const mockCompra = {
+    user: userId,
+    acao: 'BSLI3',
+    data: new Date(),
+    valor: +2.1,
+    qtd: 200,
+  };
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -27,28 +37,93 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
-  describe('List', () => {
+  describe.only('Create', () => {
+    it('Should create a new compra of user', async () => {
+      const resp = await request(api).post('/compra').send(mockCompra);
+      //.set('Authorization', `Bearer ${jwtToken}`)
+      //.expect(HttpStatus.CREATED);
+
+      console.dir(resp.text);
+
+      expect(resp.status).toEqual(HttpStatus.CREATED);
+
+      expect(resp.body._id).toBeDefined();
+      expect(resp.body._id).not.toBeNull();
+
+      idCompra = resp.body._id;
+    });
+  });
+
+  describe.only('List', () => {
     it('Should list all compra of user', async () => {
       const resp = await request(api)
         .get(`/compra/user/${userId}`)
         //.set('Authorization', `Bearer ${jwtToken}`)
         .expect(HttpStatus.OK);
 
-      console.dir(resp.body);
+      expect(resp.body[0]._id).toBeDefined();
+      expect(resp.body[0]._id).not.toBeNull();
+    });
+  });
 
-      expect(resp.body._id).toBeDefined();
-      expect(resp.body._id).not.toBeNull();
+  describe.only('Findone', () => {
+    let respFirst;
+    it('Should found a compra', async () => {
+      respFirst = await request(api)
+        .get(`/compra/${idCompra}`)
+        //.set('Authorization', `Bearer ${jwtToken}`)
+        .expect(HttpStatus.OK);
 
-      /*
-      {
-        _id: '636ebd14e7fa8691ec7f97cc',
-        user: '63b34f5da25fbb24d295ab24',
-        acao: '',
-        data: '2022-11-11T00:00:00.000Z',
-        valor: 3.7,
-        qtd: 200
-      },
-      */
+      expect(respFirst.body._id).toBeDefined();
+      expect(respFirst.body._id).not.toBeNull();
+
+      expect(respFirst.body.valueNow).toBeDefined();
+      expect(respFirst.body.valueNow).toBeGreaterThan(0);
+
+      expect(respFirst.body.saleSum).toBeDefined();
+      expect(respFirst.body.saleSum).toBeGreaterThan(0);
+
+      expect(respFirst.body.valueSum).toBeDefined();
+      expect(respFirst.body.valueSum).toBeGreaterThan(0);
+
+      expect(respFirst.body.valueAdd).toBeDefined();
+      expect(respFirst.body.valueAdd).toBeGreaterThan(0);
+
+      expect(respFirst.body.percentAdd).toBeDefined();
+      expect(respFirst.body.percentAdd).toBeGreaterThan(0);
+
+      expect(respFirst.body.dateValue).toBeDefined();
+
+      //console.log('respFirst.body');
+      //console.dir(respFirst.body);
+    });
+
+    it('Should found the same a compra and values', async () => {
+      const respSecound = await request(api)
+        .get(`/compra/${idCompra}`)
+        //.set('Authorization', `Bearer ${jwtToken}`)
+        .expect(HttpStatus.OK);
+
+      expect(respSecound.body._id).toBeDefined();
+      expect(respSecound.body._id).not.toBeNull();
+
+      expect(respSecound.body.valueNow).toBeDefined();
+      expect(respSecound.body.valueNow).toEqual(respFirst.body.valueNow);
+
+      expect(respSecound.body.saleSum).toBeDefined();
+      expect(respSecound.body.saleSum).toEqual(respFirst.body.saleSum);
+
+      expect(respSecound.body.valueSum).toBeDefined();
+      expect(respSecound.body.valueSum).toEqual(respFirst.body.valueSum);
+
+      expect(respSecound.body.valueAdd).toBeDefined();
+      expect(respSecound.body.valueAdd).toEqual(respFirst.body.valueAdd);
+
+      expect(respSecound.body.percentAdd).toBeDefined();
+      expect(respSecound.body.percentAdd).toEqual(respFirst.body.percentAdd);
+
+      expect(respSecound.body.dateValue).toBeDefined();
+      expect(respSecound.body.dateValue).toEqual(respFirst.body.dateValue);
     });
   });
 });

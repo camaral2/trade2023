@@ -7,7 +7,6 @@ import { configAcao } from './entities/configAcao.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Repository } from 'typeorm';
-import { not } from 'cheerio/lib/api/traversing';
 import { UnauthorizedException } from '@nestjs/common';
 
 describe('AcaoService', () => {

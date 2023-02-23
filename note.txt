@@ -29,3 +29,9 @@ $ yarn add class-transformer-validator
 
 Project Angular
 https://www.bezkoder.com/react-typescript-axios/
+
+TypeOrm
+https://www.tutorialspoint.com/typeorm/typeorm_quick_guide.htm#
+
+
+https://www.simplilearn.com/understanding-node-js-architecture-article

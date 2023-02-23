@@ -9,7 +9,7 @@ import cheerio from 'cheerio';
 import logger from '../utils/logger';
 import { configAcao } from './entities/configAcao.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { getConnection, Repository } from 'typeorm';
 
 @Injectable()
 export class AcaoService {
@@ -34,17 +34,18 @@ export class AcaoService {
       if (!configA || configA == null)
         throw new NotFoundException(`nomeAcao not found: (${nomeAcao})`);
 
+      logger.info(`configA.dadosAcao.dataAcao:[${configA.dadosAcao.dataAcao}]`);
+
       if (configA.dadosAcao && configA.dadosAcao.dataAcao) {
         const dateLimite = new Date();
-        console.log('now:', dateLimite);
         dateLimite.setMinutes(dateLimite.getMinutes() + 30); // timestamp
-        console.log('now:', dateLimite);
 
         //
         //Case the last get of acao then get data of record
         if (configA.dadosAcao.dataAcao < dateLimite) {
-          const ret: AcaoDto = configA.dadosAcao;
+          logger.info(`Carregando os dados da acao salvo anteriormente`);
 
+          const ret: AcaoDto = configA.dadosAcao;
           return ret;
         }
       }
@@ -87,9 +88,13 @@ export class AcaoService {
         dataAcao: new Date(),
       };
 
-      configA.dadosAcao = ret;
+      const retSave = await this.configAcaoRepository.update(
+        { _id: configA._id },
+        { dadosAcao: ret },
+      );
 
-      await this.configAcaoRepository.update({ _id: configA._id }, configA);
+      console.log('retSave');
+      console.dir(retSave);
 
       return ret;
     } catch (err) {
