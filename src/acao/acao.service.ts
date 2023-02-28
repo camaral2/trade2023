@@ -37,12 +37,15 @@ export class AcaoService {
       logger.info(`configA.dadosAcao.dataAcao:[${configA.dadosAcao.dataAcao}]`);
 
       if (configA.dadosAcao && configA.dadosAcao.dataAcao) {
-        const dateLimite = new Date();
+        const dateNow = new Date();
+        const dateLimite = new Date(configA.dadosAcao.dataAcao);
         dateLimite.setMinutes(dateLimite.getMinutes() + 30); // timestamp
+
+        logger.info(`dateLimite:${dateLimite} < dateNow:${dateNow}`);
 
         //
         //Case the last get of acao then get data of record
-        if (configA.dadosAcao.dataAcao < dateLimite) {
+        if (dateNow < dateLimite) {
           logger.info(`Carregando os dados da acao salvo anteriormente`);
 
           const ret: AcaoDto = configA.dadosAcao;
@@ -88,13 +91,14 @@ export class AcaoService {
         dataAcao: new Date(),
       };
 
-      const retSave = await this.configAcaoRepository.update(
+      logger.info(
+        `valueMin:${ret.valueMin} / value:${ret.value} / valueMax:${ret.valueMax}`,
+      );
+
+      await this.configAcaoRepository.update(
         { _id: configA._id },
         { dadosAcao: ret },
       );
-
-      console.log('retSave');
-      console.dir(retSave);
 
       return ret;
     } catch (err) {

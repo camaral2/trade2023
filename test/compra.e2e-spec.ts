@@ -5,20 +5,14 @@ import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { faker } from '@faker-js/faker';
 import * as uuid from 'uuid';
+import { CreateCompraDto } from 'src/compra/dto/create-compra.dto';
+import { UpdateCompraDto } from 'src/compra/dto/update-compra.dto';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let api;
 
   const userId = uuid.v4();
-  let idCompra: any;
-  const mockCompra = {
-    user: userId,
-    acao: 'BSLI3',
-    data: new Date(),
-    valor: +2.1,
-    qtd: 200,
-  };
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -37,13 +31,23 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
-  describe.only('Create', () => {
+  describe('Compra without value sales', () => {
+    let idCompra: any;
+    let respFirst;
+
+    const mockCompra: CreateCompraDto = {
+      user: userId,
+      acao: 'BSLI3',
+      data: new Date(),
+      valor: 5,
+      qtd: 200,
+    };
+
+    const mockSales: UpdateCompraDto = mockCompra as UpdateCompraDto;
+
     it('Should create a new compra of user', async () => {
       const resp = await request(api).post('/compra').send(mockCompra);
       //.set('Authorization', `Bearer ${jwtToken}`)
-      //.expect(HttpStatus.CREATED);
-
-      console.dir(resp.text);
 
       expect(resp.status).toEqual(HttpStatus.CREATED);
 
@@ -52,22 +56,7 @@ describe('AppController (e2e)', () => {
 
       idCompra = resp.body._id;
     });
-  });
 
-  describe.only('List', () => {
-    it('Should list all compra of user', async () => {
-      const resp = await request(api)
-        .get(`/compra/user/${userId}`)
-        //.set('Authorization', `Bearer ${jwtToken}`)
-        .expect(HttpStatus.OK);
-
-      expect(resp.body[0]._id).toBeDefined();
-      expect(resp.body[0]._id).not.toBeNull();
-    });
-  });
-
-  describe.only('Findone', () => {
-    let respFirst;
     it('Should found a compra', async () => {
       respFirst = await request(api)
         .get(`/compra/${idCompra}`)
@@ -124,6 +113,79 @@ describe('AppController (e2e)', () => {
 
       expect(respSecound.body.dateValue).toBeDefined();
       expect(respSecound.body.dateValue).toEqual(respFirst.body.dateValue);
+    });
+
+    it('Should list all compra of user', async () => {
+      const resp = await request(api)
+        .get(`/compra/user/${userId}`)
+        //.set('Authorization', `Bearer ${jwtToken}`)
+        .expect(HttpStatus.OK);
+
+      expect(resp.body[0]._id).toBeDefined();
+      expect(resp.body[0]._id).not.toBeNull();
+    });
+
+    it('Should set a compra the sales', async () => {
+      mockSales.qtdSale = 100;
+      mockSales.valueSale = 7.5;
+      mockSales.dateSale = new Date();
+
+      const resp = await request(api)
+        .put(`/compra/${idCompra}`)
+        .send(mockSales);
+      //.set('Authorization', `Bearer ${jwtToken}`)
+
+      expect(resp.body.affected).toEqual(1);
+      expect(resp.status).toEqual(HttpStatus.OK);
+    });
+
+    it('Should found a compra after Sales', async () => {
+      const resp = await request(api)
+        .get(`/compra/${idCompra}`)
+        //.set('Authorization', `Bearer ${jwtToken}`)
+        .expect(HttpStatus.OK);
+
+      //console.log(resp.body);
+
+      expect(resp.body._id).toBeDefined();
+      expect(resp.body._id).not.toBeNull();
+
+      expect(resp.body.valueNow).not.toBeDefined();
+
+      expect(resp.body.saleSum).toBeDefined();
+      expect(resp.body.saleSum).toEqual(
+        mockSales.qtdSale * mockSales.valueSale,
+      );
+
+      expect(resp.body.valueSum).toBeDefined();
+      expect(resp.body.valueSum).toEqual(mockSales.qtdSale * resp.body.valor);
+
+      expect(resp.body.valueAdd).toBeDefined();
+      expect(resp.body.valueAdd).toBeGreaterThan(0);
+
+      expect(resp.body.percentAdd).toBeDefined();
+      expect(resp.body.percentAdd).toEqual(50);
+
+      expect(resp.body.dateSale).toBeDefined();
+
+      //console.log('respFirst.body');
+      //console.dir(respFirst.body);
+    });
+
+    it('Should delete a new compra of user', async () => {
+      const resp = await request(api).delete(`/compra/${idCompra}`);
+      //.set('Authorization', `Bearer ${jwtToken}`)
+
+      expect(resp.status).toEqual(HttpStatus.OK);
+    });
+
+    it('Should found the a compra of delete', async () => {
+      const respSecound = await request(api)
+        .get(`/compra/${idCompra}`)
+        //.set('Authorization', `Bearer ${jwtToken}`)
+        .expect(HttpStatus.NOT_FOUND)
+        .expect(/Id not found/);
+      expect(respSecound.body._id).not.toBeDefined();
     });
   });
 });

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import logger from '../utils/logger';
-import { Repository } from 'typeorm';
+import { DeleteResult, Repository, UpdateResult } from 'typeorm';
 import { CreateCompraDto } from './dto/create-compra.dto';
 import { UpdateCompraDto } from './dto/update-compra.dto';
 import { Compra } from './entities/compra.entity';
@@ -14,6 +14,7 @@ import { AcaoService } from '../acao/acao.service';
 import { AcaoDto } from '../acao/dto/acao.dto';
 import { util } from '../utils';
 import * as uuid from 'uuid';
+import { ReturnDeleteUpdateDto } from './dto/return-delete-update-compra.dto';
 
 @Injectable()
 export class CompraService {
@@ -59,16 +60,13 @@ export class CompraService {
   }
 
   private async prepareRegister(dataOld: Compra): Promise<Compra> {
+    logger.info(`--------------------------`);
     logger.info(
       `prepareRegister - dataOld.valueNow:(${dataOld.valueNow}) - dataOld.valueSale:(${dataOld.valueSale})`,
     );
 
     if (!(dataOld.valueNow > 0) && !(dataOld.valueSale > 0)) {
       const ret: AcaoDto = await this.acaoService.getAcaoToday(dataOld.acao);
-
-      // logger.info(`ret.value:${ret.value}`);
-      // logger.info(`ret.valueMin:${ret.valueMin}`);
-      // logger.info(`ret.valueMax:${ret.valueMax}`);
 
       if (ret) {
         dataOld.valueNow = ret.value;
@@ -82,16 +80,25 @@ export class CompraService {
       dataOld = await this.setValues(dataOld.valueSale, dataOld);
     }
 
-    logger.info(`Valor retorno - dataOld.valueNow:${dataOld.valueNow}`);
-    logger.info(`Valor retorno - dataOld.valueSale:${dataOld.valueSale}`);
-    logger.info(`Valor retorno - dataOld.valor:${dataOld.valor}`);
+    logger.info(
+      `Valor retorno - valueNow:${dataOld.valueNow} / valueSale:${dataOld.valueSale} / valor:${dataOld.valor}`,
+    );
 
     return dataOld;
   }
 
   private async setValues(value: number, dataEntity: Compra): Promise<Compra> {
-    dataEntity.saleSum = util.numero(value * dataEntity.qtd, 2);
-    dataEntity.valueSum = util.numero(dataEntity.valor * dataEntity.qtd, 2);
+    if (dataEntity.qtdSale > 0) {
+      dataEntity.saleSum = util.numero(value * dataEntity.qtdSale, 2);
+      dataEntity.valueSum = util.numero(
+        dataEntity.valor * dataEntity.qtdSale,
+        2,
+      );
+    } else {
+      dataEntity.saleSum = util.numero(value * dataEntity.qtd, 2);
+      dataEntity.valueSum = util.numero(dataEntity.valor * dataEntity.qtd, 2);
+    }
+
     dataEntity.valueAdd = util.numero(
       dataEntity.saleSum - dataEntity.valueSum,
       2,
@@ -124,11 +131,28 @@ export class CompraService {
     return compra;
   }
 
-  update(id: number, updateCompraDto: UpdateCompraDto) {
-    return `This action updates a #${id} compra`;
+  async update(
+    id: string,
+    updateCompraDto: UpdateCompraDto,
+  ): Promise<ReturnDeleteUpdateDto> {
+    try {
+      logger.info(`update this compra - id:${id}`);
+
+      const ret: UpdateResult = await this.compraRepository.update(
+        { _id: id },
+        updateCompraDto,
+      );
+
+      return { affected: ret.affected };
+    } catch (err) {
+      logger.error(`Error update: ${err} - [id: ${id}]`);
+      throw err;
+    }
   }
 
-  async remove(id: string) {
-    await this.compraRepository.delete(id);
+  async remove(id: string): Promise<number | null> {
+    logger.info(`delete this compra - id:${id}`);
+    const ret: DeleteResult = await this.compraRepository.delete({ _id: id });
+    return ret.affected;
   }
 }
