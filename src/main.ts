@@ -26,6 +26,10 @@ async function bootstrap() {
 
   await app.listen(PORT, () => {
     logger.info(`Listening on PORT: ${PORT}`);
+    logger.info(
+      `MicroService on PORT: ${parseInt(process.env.AUTH_CLIENT_PORT)}`,
+    );
+    logger.info(`MicroService on HOST: ${process.env.AUTH_CLIENT_HOST}`);
   });
 }
 bootstrap();

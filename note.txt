@@ -35,3 +35,14 @@ https://www.tutorialspoint.com/typeorm/typeorm_quick_guide.htm#
 
 
 https://www.simplilearn.com/understanding-node-js-architecture-article
+https://github.com/ramesaliyev/mom/tree/8c543e33c5190e2a25ca31f0a1d1a658a0819052
+
+
+Servidor VPS e Deploy
+https://blog.soaresdev.com/deploy-nodejs-typescript/
+
+Guard
+https://blog.logrocket.com/understanding-guards-nestjs/
+https://github.com/woodchuck/nestjs-issue-5522/blob/main/src/auth/jwt-auth.guard.ts
+
+** https://copyprogramming.com/howto/nestjs-mock-jwt-authentication-in-e2e-tests

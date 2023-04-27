@@ -1,13 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  Entity,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-  BaseEntity,
-  ObjectIdColumn,
-} from 'typeorm';
+import { Entity, Column, BaseEntity, ObjectIdColumn } from 'typeorm';
 
 @Entity('compra')
 export class Compra extends BaseEntity {

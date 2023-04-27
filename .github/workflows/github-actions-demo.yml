@@ -1,0 +1,82 @@
+name: 🚀 Deploy
+ 
+on:
+  push:
+  pull_request:
+
+env:
+  PORT: ${{ vars.PORT}} 
+  MONGO_URL: ${{secrets.MONGO_URL}}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+        mongodb-version: ['6.0']
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'yarn'
+
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile      
+
+    - name: Start MongoDB
+      uses: supercharge/mongodb-github-action@1.8.0
+      with:
+        mongodb-version: ${{ matrix.mongodb-version }}
+        mongodb-port: 27017
+        mongodb-db: trade2
+        #mongodb-username: usuario
+        #mongodb-password: senha  
+              
+    - name: Running e2e testing
+      run: yarn test:e2e
+
+    - name: copy dist via ssh password
+      uses: appleboy/scp-action@v0.1.4
+      env:
+        PORT: 22
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: 22
+        source: "dist/src/*"
+        target: "apps_nodejs/trade2023"
+        debug: true  
+        strip_components: 2
+
+    - name: copy file package.json via ssh password
+      uses: appleboy/scp-action@v0.1.4
+      env:
+        PORT: 22
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: 22
+        source: package.json
+        target: ./apps_nodejs/trade2023/
+        debug: true   
+
+    # - name: Run production scripts
+    #   uses: appleboy/ssh-action@v0.1.4
+    #   env:
+    #     PORT: 22
+    #   with:
+    #     host: ${{ secrets.SSH_HOST }}
+    #     username: ${{ secrets.SSH_USERNAME }}
+    #     password: ${{ secrets.SSH_PASSWORD }}
+    #     port: 22
+    #     script: |
+    #        cd ./apps_nodejs/trade2023/
+    #        npm update
+    #        pm2 restart trade2023

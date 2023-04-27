@@ -34,7 +34,7 @@ export class AcaoService {
       if (!configA || configA == null)
         throw new NotFoundException(`nomeAcao not found: (${nomeAcao})`);
 
-      logger.info(`configA.dadosAcao.dataAcao:[${configA.dadosAcao.dataAcao}]`);
+      //logger.info(`configA.dadosAcao.dataAcao:[${configA.dadosAcao.dataAcao}]`);
 
       if (configA.dadosAcao && configA.dadosAcao.dataAcao) {
         const dateNow = new Date();

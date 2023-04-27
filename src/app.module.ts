@@ -5,10 +5,10 @@ import { AppService } from './app.service';
 import { CompraModule } from './compra/compra.module';
 import { join } from 'path';
 import 'dotenv/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
-    CompraModule,
     TypeOrmModule.forRoot({
       type: 'mongodb',
       url: process.env.MONGO_URL,
@@ -18,6 +18,7 @@ import 'dotenv/config';
       logging: true,
       useUnifiedTopology: true,
     }),
+    CompraModule,
   ],
   controllers: [AppController],
   providers: [AppService],

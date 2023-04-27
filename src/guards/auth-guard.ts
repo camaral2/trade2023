@@ -13,11 +13,18 @@ export class AuthGuard implements CanActivate {
 
     try {
       const token = this.getToken(req);
+      //console.log('-------------- Inicio Validacao -------------');
+
+      //console.log('token enviado para o micro servico:', token);
+
+      //if (!token) {
+      //  return false;
+      //}
 
       const res = await this.client
         .send(
           { role: 'auth', cmd: 'check' },
-          { jwt: token, app: 'trade2023' },
+          { jwt: token, app: 'trade2013' },
           //{ jwt: req.headers['authorization']?.split(' ')[1] },
         )
         .pipe(timeout(5000))
